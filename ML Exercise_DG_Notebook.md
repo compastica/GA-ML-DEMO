@@ -9,7 +9,7 @@ Technique: Multiple regression
 ## Aside: About R-Markdown
 Coding using R-Markdown allows us to 
 1. Write our code in a very readable way and
-2. Post our code directly to the web, graphics and all, with boostrap or whatever formatting you want.
+2. Post our code directly to the web, graphics and all, with boostrap or whatever formatting you want...
 
 ## About the dataset:
 From the machine learning standpoint, we are trying to predict a supervisors score, based on the scores he receives in the six areas below.
@@ -96,6 +96,7 @@ plotmatrix(x)  #Part of ggplot. Hadley Wickham is an R god
 As an aside, ggpairs is very slow, but we can see an output here:
 ![ggpair example](http://note.io/1bCIWqr)
 -->
+
 ## What can we learn from the scatterplot alone?  
 * __Correlations__: it looks like complaints and learning are probably correlated to the RATING.
    * We can see that both complaints and learning increase as ratings increase
@@ -107,10 +108,13 @@ As an aside, ggpairs is very slow, but we can see an output here:
 
 ## Aside: Anscombe's Quartet -- Why plots, and not just numbers, are important:
 ![Anscombe's Quartet](http://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Anscombe%27s_quartet_3.svg/800px-Anscombe%27s_quartet_3.svg.png)
+
 ![Summary](http://note.io/Nfganl)
+
 * Same summary statistics, but totally different datasets.
 
 
+## Running the Regression -- All Variables Included
 
 This linear fit represents the "full model"; eg, the fit with all of the independent variables included
 
@@ -150,7 +154,8 @@ summary(fit)
 # significantly correlated.
 ```
 
-## Interpreting the results
+
+## Interpreting the results 1 (of 3)
 * Y Intercept: Score when predictors are zero
 * Estimates: Slope -- how much increase in Score based on unit change in Complaints, etc.
 * Std. Error: How far off, on average, are the real values from our slope?
@@ -160,12 +165,12 @@ summary(fit)
    * Note that the t-value of zero is "no relationship", or a Beta-Coefficient of zero,
    
    
-### Background on p-value and t-values   
+## Understanding P values and T values   
 ![Graph of T-Distribution](http://note.io/1eyFf7T)
 
 __Cool tool to play with this stuff: http://www.stat.berkeley.edu/~stark/Java/Html/tHiLite.htm__
 
-## Interpretation Continued
+## Interpreting Continued
 * Significance codes: technically we would pre-determine what's important here depending on our aims, we might have chosen ".1" as the threshold since, as machine learners, we're just looking to do some predictions and not identify causality or underlying truth
 * Residual SE: Average error
 * Multiple R-Squared: "Goodness of Fit" ~ Proportion of total variability of Scores explained by predictors.
@@ -174,6 +179,8 @@ __Cool tool to play with this stuff: http://www.stat.berkeley.edu/~stark/Java/Ht
   * Increases only if additional variables add more than the automatic amount to predictive power.
   * If we add variables in order of t value, then R Square will peak at point where we have the best fit with the minimum number of terms.  
 * F-Statistic: Predictive power of all explanatory variables -- Ratio of explained to unexplained variances.    P-value is compared with no predictive power.  Unlike R-Squared, doesn't indicate % explained.
+
+## Identifying the Best Model (Peak R-Squared)
 
 We can use Adjusted R-Squared now, and manually remove variables to find its peak:
 
@@ -327,12 +334,14 @@ summary(fit6)
 ## F-statistic: 32.7 on 2 and 27 DF,  p-value: 6.06e-08
 ```
 
-```r
 
+## Reviewing the Residual Plots
+
+```r
 plot(resid(fit4))  # want to see absence of structure in resid scatterplot ('gaussian white noise')
 ```
 
-![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-71.png) 
+![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-81.png) 
 
 ```r
 # --> this plot looks pretty good; also note that resid quartiles look good
@@ -340,176 +349,12 @@ plot(resid(fit4))  # want to see absence of structure in resid scatterplot ('gau
 qqnorm(resid(fit4))  # want to see straight diagonal line in resid qqplot
 ```
 
-![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-72.png) 
+![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-82.png) 
 
 ```r
 # --> again, looks pretty good
 ```
 
 
-
-
-## EXAMPLE 2 - cigarette consumptio
-
-```r
-x <- read.table("http://www.ats.ucla.edu/stat/examples/chp/p081.txt", sep = "\t", 
-    h = T)
-head(x)
-```
-
-```
-##   State  Age   HS Income Black Female Price Sales
-## 1    AL 27.0 41.3   2948  26.2   51.7  42.7  89.8
-## 2    AK 22.9 66.7   4644   3.0   45.7  41.8 121.3
-## 3    AZ 26.3 58.1   3665   3.0   50.8  38.5 115.2
-## 4    AR 29.1 39.9   2878  18.3   51.5  38.8 100.3
-## 5    CA 28.1 62.6   4493   7.0   50.8  39.7 123.0
-## 6    CO 26.2 63.9   3855   3.0   50.7  31.1 124.8
-```
-
-```r
-x$State <- NULL  # remove state label
-
-fit <- lm(Sales ~ ., data = x)  # full model
-summary(fit)
-```
-
-```
-## 
-## Call:
-## lm(formula = Sales ~ ., data = x)
-## 
-## Residuals:
-##    Min     1Q Median     3Q    Max 
-## -48.40 -12.39  -5.37   6.27 133.21 
-## 
-## Coefficients:
-##             Estimate Std. Error t value Pr(>|t|)   
-## (Intercept) 103.3448   245.6072    0.42   0.6760   
-## Age           4.5205     3.2198    1.40   0.1673   
-## HS           -0.0616     0.8147   -0.08   0.9401   
-## Income        0.0189     0.0102    1.85   0.0704 . 
-## Black         0.3575     0.4872    0.73   0.4669   
-## Female       -1.0529     5.5610   -0.19   0.8507   
-## Price        -3.2549     1.0314   -3.16   0.0029 **
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-## 
-## Residual standard error: 28.2 on 44 degrees of freedom
-## Multiple R-squared:  0.321,	Adjusted R-squared:  0.228 
-## F-statistic: 3.46 on 6 and 44 DF,  p-value: 0.00686
-```
-
-```r
-
-fit <- lm(Sales ~ 0 + ., data = x)  # remove intercept
-summary(fit)  # note weird stats! (high R-sq, low t-scores)
-```
-
-```
-## 
-## Call:
-## lm(formula = Sales ~ 0 + ., data = x)
-## 
-## Residuals:
-##    Min     1Q Median     3Q    Max 
-## -44.82 -11.13  -6.13   5.33 132.54 
-## 
-## Coefficients:
-##        Estimate Std. Error t value Pr(>|t|)   
-## Age     3.93883    2.88125    1.37   0.1784   
-## HS     -0.00229    0.79503    0.00   0.9977   
-## Income  0.01950    0.01004    1.94   0.0583 . 
-## Black   0.28944    0.45534    0.64   0.5282   
-## Female  1.15527    1.82304    0.63   0.5295   
-## Price  -3.19659    1.01266   -3.16   0.0028 **
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-## 
-## Residual standard error: 27.9 on 45 degrees of freedom
-## Multiple R-squared:  0.956,	Adjusted R-squared:  0.951 
-## F-statistic:  165 on 6 and 45 DF,  p-value: <2e-16
-```
-
-```r
-# --> linear regression assumps violated --> likely explanation: need more
-# data for prediction
-fit2 <- update(fit, . ~ . - HS)
-summary(fit2)
-```
-
-```
-## 
-## Call:
-## lm(formula = Sales ~ Age + Income + Black + Female + Price - 
-##     1, data = x)
-## 
-## Residuals:
-##    Min     1Q Median     3Q    Max 
-## -44.81 -11.13  -6.12   5.34 132.54 
-## 
-## Coefficients:
-##        Estimate Std. Error t value Pr(>|t|)   
-## Age     3.94234    2.58306    1.53   0.1338   
-## Income  0.01948    0.00686    2.84   0.0067 **
-## Black   0.29035    0.32572    0.89   0.3773   
-## Female  1.15210    1.43573    0.80   0.4264   
-## Price  -3.19624    0.99413   -3.22   0.0024 **
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-## 
-## Residual standard error: 27.6 on 46 degrees of freedom
-## Multiple R-squared:  0.956,	Adjusted R-squared:  0.952 
-## F-statistic:  202 on 5 and 46 DF,  p-value: <2e-16
-```
-
-```r
-
-fit3 <- update(fit2, . ~ . - Female)
-summary(fit3)  # note t-score of Age jumps (Age becomes much more significant)
-```
-
-```
-## 
-## Call:
-## lm(formula = Sales ~ Age + Income + Black + Price - 1, data = x)
-## 
-## Residuals:
-##    Min     1Q Median     3Q    Max 
-## -42.71 -12.43  -5.81   5.68 133.84 
-## 
-## Coefficients:
-##        Estimate Std. Error t value Pr(>|t|)    
-## Age     5.66372    1.43345    3.95  0.00026 ***
-## Income  0.01952    0.00683    2.86  0.00634 ** 
-## Black   0.37111    0.30860    1.20  0.23517    
-## Price  -2.92582    0.93173   -3.14  0.00292 ** 
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-## 
-## Residual standard error: 27.5 on 47 degrees of freedom
-## Multiple R-squared:  0.956,	Adjusted R-squared:  0.952 
-## F-statistic:  254 on 4 and 47 DF,  p-value: <2e-16
-```
-
-```r
-# --> make sure you remove only one feature at a time with BE!
-
-plot(resid(fit3))  # obvious outlier present
-```
-
-![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-81.png) 
-
-```r
-qqnorm(resid(fit3))  # this does not look good! also resid quartiles are out of wack
-```
-
-![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-82.png) 
-
-```r
-# --> conclusion: this dataset doesn't support multiple linear regression
-# very well!  --> next step: before discarding modeling approach, get more
-# data!
-```
 
 

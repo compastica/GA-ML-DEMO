@@ -69,6 +69,7 @@ plotmatrix(x) #Part of ggplot. Hadley Wickham is an R god
 As an aside, ggpairs is very slow, but we can see an output here:
 ![ggpair example](http://note.io/1bCIWqr)
 -->
+
 ## What can we learn from the scatterplot alone?  
 * __Correlations__: it looks like complaints and learning are probably correlated to the RATING.
    * We can see that both complaints and learning increase as ratings increase
@@ -80,10 +81,13 @@ As an aside, ggpairs is very slow, but we can see an output here:
 
 ## Aside: Anscombe's Quartet -- Why plots, and not just numbers, are important:
 ![Anscombe's Quartet](http://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Anscombe%27s_quartet_3.svg/800px-Anscombe%27s_quartet_3.svg.png)
+
 ![Summary](http://note.io/Nfganl)
+
 * Same summary statistics, but totally different datasets.
 
 
+## Running the Regression -- All Variables Included
 
 This linear fit represents the "full model"; eg, the fit with all of the independent variables included
 ```{r}
@@ -91,7 +95,8 @@ fit <- lm(RATING ~ ., data=x)
 summary(fit)
 # Just as we suspected from looking Complaints and Learning are significantly correlated.
 ```
-## Interpreting the results
+
+## Interpreting the results 1 (of 3)
 * Y Intercept: Score when predictors are zero
 * Estimates: Slope -- how much increase in Score based on unit change in Complaints, etc.
 * Std. Error: How far off, on average, are the real values from our slope?
@@ -101,12 +106,12 @@ summary(fit)
    * Note that the t-value of zero is "no relationship", or a Beta-Coefficient of zero,
    
    
-### Background on p-value and t-values   
+## Understanding P values and T values   
 ![Graph of T-Distribution](http://note.io/1eyFf7T)
 
 __Cool tool to play with this stuff: http://www.stat.berkeley.edu/~stark/Java/Html/tHiLite.htm__
 
-## Interpretation Continued
+## Interpreting Continued
 * Significance codes: technically we would pre-determine what's important here depending on our aims, we might have chosen ".1" as the threshold since, as machine learners, we're just looking to do some predictions and not identify causality or underlying truth
 * Residual SE: Average error
 * Multiple R-Squared: "Goodness of Fit" ~ Proportion of total variability of Scores explained by predictors.
@@ -115,6 +120,8 @@ __Cool tool to play with this stuff: http://www.stat.berkeley.edu/~stark/Java/Ht
   * Increases only if additional variables add more than the automatic amount to predictive power.
   * If we add variables in order of t value, then R Square will peak at point where we have the best fit with the minimum number of terms.  
 * F-Statistic: Predictive power of all explanatory variables -- Ratio of explained to unexplained variances.    P-value is compared with no predictive power.  Unlike R-Squared, doesn't indicate % explained.
+
+## Identifying the Best Model (Peak R-Squared)
 
 We can use Adjusted R-Squared now, and manually remove variables to find its peak:
 
@@ -136,7 +143,10 @@ summary(fit5)
 
 fit6 <- update(fit5, .~. -X3)	# weaker still
 summary(fit6)
+```
 
+## Reviewing the Residual Plots
+```{r}
 plot(resid(fit4))			# want to see absence of structure in resid scatterplot ("gaussian white noise")
 # --> this plot looks pretty good; also note that resid quartiles look good
 
@@ -145,30 +155,4 @@ qqnorm(resid(fit4))		# want to see straight diagonal line in resid qqplot
 ```
 
 
-
-## EXAMPLE 2 - cigarette consumptio
-```{r}
-x <- read.table('http://www.ats.ucla.edu/stat/examples/chp/p081.txt', sep='\t', h=T)
-head(x)
-x$State <- NULL			# remove state label
-
-fit <- lm(Sales ~ ., data=x)	# full model
-summary(fit)
-
-fit <- lm(Sales ~ 0 + ., data=x)	# remove intercept
-summary(fit)			# note weird stats! (high R-sq, low t-scores)
-# --> linear regression assumps violated
-# --> likely explanation: need more data for prediction
-fit2 <- update(fit, .~. -HS)
-summary(fit2)
-
-fit3 <- update(fit2, .~. -Female)
-summary(fit3)			# note t-score of Age jumps (Age becomes much more significant)
-# --> make sure you remove only one feature at a time with BE!
-
-plot(resid(fit3))			# obvious outlier present
-qqnorm(resid(fit3))		# this does not look good! also resid quartiles are out of wack
-# --> conclusion: this dataset doesn't support multiple linear regression very well!
-# --> next step: before discarding modeling approach, get more data!
-```
 
