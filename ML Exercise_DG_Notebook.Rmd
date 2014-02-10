@@ -1,0 +1,174 @@
+Regression Example: A Better Boss (by Learning from Data)
+===============================================================
+We're going to learn about being a better boss by learning from a survey.
+Question: What makes a better boss? 
+Data: 30 Surveys with six scoresets
+Output: Quantitative, continuous.
+Technique: Multiple regression
+
+## Aside: About R-Markdown
+Coding using R-Markdown allows us to 
+1. Write our code in a very readable way and
+2. Post our code directly to the web, graphics and all, with boostrap or whatever formatting you want...
+
+## About the dataset:
+From the machine learning standpoint, we are trying to predict a supervisors score, based on the scores he receives in the six areas below.
+
+
+__Variable Description:__
+
+
+![Image](http://note.io/1kiaQNw)
+
+_Data set is from "Regression Analysis by Example"_
+
+```{r}
+x <- read.table('http://www.ats.ucla.edu/stat/examples/chp/p054.txt', sep='\t', h=T)
+```
+
+Take a look at the data file: 
+```{r}
+head(x)
+```
+
+Scores across 30 departments are the proportion of variable responses in each category.
+
+
+## Creating a Model
+* The dependent value, the value we are looking to predict, is the supervisor's score which is, as we can see, a continuous variable.
+
+
+We'll assume a linear model
+![Linear Model equation](http://note.io/NfcoKF)
+Where Y is the a linear function of X's and the Error is the discrepency.  We assume that the error is random.
+
+
+## Drawing a Scatterplot
+Let's take scatterplot of each variable pair:
+
+```{r}
+plot(x)
+```
+
+Hm... its a bit confusing to see what it means. Let's go ahead change the varaible names to be a bit more meaningful:
+```{r}
+colnames(x) <- c("RATING","Complaints","Priv.","Learn","Raise","Perf.","Advance")
+
+plot(x)
+```
+And let's jazz it up a little:
+
+```{r message=FALSE}
+library(ggplot2)
+plotmatrix(x) #Part of ggplot. Hadley Wickham is an R god
+
+```
+
+
+<!--
+As an aside, ggpairs is very slow, but we can see an output here:
+![ggpair example](http://note.io/1bCIWqr)
+-->
+## What can we learn from the scatterplot alone?  
+* __Correlations__: it looks like complaints and learning are probably correlated to the RATING.
+   * We can see that both complaints and learning increase as ratings increase
+   * Note that correlation just tells the relationship between two variables, where-as regression actually provides a predicted value for a response given a predictor variable
+* __Histograms__: Our fancy graph gives us a bit more information, with nice histograms for each value.  
+   * Our Supervisers have a little suck-pile over on the left there, and otherwise receive slightly above average.
+   * Supervisers tended to do pretty well on raises for performance, but not good at pushing employees to advance to new jobs
+   * Wide range of opinions on learning opportunities
+
+## Aside: Anscombe's Quartet -- Why plots, and not just numbers, are important:
+![Anscombe's Quartet](http://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Anscombe%27s_quartet_3.svg/800px-Anscombe%27s_quartet_3.svg.png)
+![Summary](http://note.io/Nfganl)
+* Same summary statistics, but totally different datasets.
+
+
+
+This linear fit represents the "full model"; eg, the fit with all of the independent variables included
+```{r}
+fit <- lm(RATING ~ ., data=x)
+summary(fit)
+# Just as we suspected from looking Complaints and Learning are significantly correlated.
+```
+## Interpreting the results
+* Y Intercept: Score when predictors are zero
+* Estimates: Slope -- how much increase in Score based on unit change in Complaints, etc.
+* Std. Error: How far off, on average, are the real values from our slope?
+* T Value: Usefulnes of predictor: Estimate / Error -- 
+* P Value: What are the odds of getting a T value that high from a random population of predictors?  
+   * Note that this is a 'test', in that we're testing whether we can say that there is no relationhip (Null Hypothesis).
+   * Note that the t-value of zero is "no relationship", or a Beta-Coefficient of zero,
+   
+   
+### Background on p-value and t-values   
+![Graph of T-Distribution](http://note.io/1eyFf7T)
+
+__Cool tool to play with this stuff: http://www.stat.berkeley.edu/~stark/Java/Html/tHiLite.htm__
+
+## Interpretation Continued
+* Significance codes: technically we would pre-determine what's important here depending on our aims, we might have chosen ".1" as the threshold since, as machine learners, we're just looking to do some predictions and not identify causality or underlying truth
+* Residual SE: Average error
+* Multiple R-Squared: "Goodness of Fit" ~ Proportion of total variability of Scores explained by predictors.
+  * __always__ increases with additions of predictor variables
+* Adjusted R-Squared:
+  * Increases only if additional variables add more than the automatic amount to predictive power.
+  * If we add variables in order of t value, then R Square will peak at point where we have the best fit with the minimum number of terms.  
+* F-Statistic: Predictive power of all explanatory variables -- Ratio of explained to unexplained variances.    P-value is compared with no predictive power.  Unlike R-Squared, doesn't indicate % explained.
+
+We can use Adjusted R-Squared now, and manually remove variables to find its peak:
+
+```{r}
+fit2 <- update(fit, .~. -Perf.)  # remove feature w/ lowest (abs) t score
+summary(fit2)  		# note R-sq decreases slightly, but adj R-sq increases slightly
+# --> increasing bias, decreasing variance
+
+fit3 <- update(fit2, .~. -Raise)	# ditto
+summary(fit3)
+
+fit4 <- update(fit3, .~. -Priv.)	# ditto
+summary(fit4)			# stopping criteria met: all featuers have |t| > 1a
+# --> optimal bias-variance pt reached
+# --> Residual standard error (RSE) minimized
+
+fit5 <- update(fit4, .~. -Advance)	# note this model is weaker (lower R-sq, higher RSE)
+summary(fit5)
+
+fit6 <- update(fit5, .~. -X3)	# weaker still
+summary(fit6)
+
+plot(resid(fit4))			# want to see absence of structure in resid scatterplot ("gaussian white noise")
+# --> this plot looks pretty good; also note that resid quartiles look good
+
+qqnorm(resid(fit4))		# want to see straight diagonal line in resid qqplot
+# --> again, looks pretty good
+```
+
+
+
+## EXAMPLE 2 - cigarette consumptio
+```{r}
+x <- read.table('http://www.ats.ucla.edu/stat/examples/chp/p081.txt', sep='\t', h=T)
+head(x)
+x$State <- NULL			# remove state label
+
+fit <- lm(Sales ~ ., data=x)	# full model
+summary(fit)
+
+fit <- lm(Sales ~ 0 + ., data=x)	# remove intercept
+summary(fit)			# note weird stats! (high R-sq, low t-scores)
+# --> linear regression assumps violated
+# --> likely explanation: need more data for prediction
+fit2 <- update(fit, .~. -HS)
+summary(fit2)
+
+fit3 <- update(fit2, .~. -Female)
+summary(fit3)			# note t-score of Age jumps (Age becomes much more significant)
+# --> make sure you remove only one feature at a time with BE!
+
+plot(resid(fit3))			# obvious outlier present
+qqnorm(resid(fit3))		# this does not look good! also resid quartiles are out of wack
+# --> conclusion: this dataset doesn't support multiple linear regression very well!
+# --> next step: before discarding modeling approach, get more data!
+```
+
